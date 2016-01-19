@@ -1,0 +1,8 @@
+applications:
+- path: .
+  memory: 24M
+  instances: 1
+  name: helloworld-jdg-cfdemo
+  host: helloworld-jdg-cfdemo
+  disk_quota: 1024M
+  buildpack: https://github.com/cloudfoundry/go-buildpack.git
