@@ -1,6 +1,6 @@
 applications:
 - path: .
-  memory: 24M
+  memory: 8M
   instances: 1
   name: helloworld-jdg-cfdemo
   host: helloworld-jdg-cfdemo
