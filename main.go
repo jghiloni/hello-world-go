@@ -126,8 +126,6 @@ func main() {
   http.HandleFunc("/reset", resetHandler)
   http.HandleFunc("/hello", helloHandler)
 
-  http.Handle("/static", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
-
   err := http.ListenAndServe(":" + os.Getenv("PORT"), nil)
   if err != nil {
     log.Fatal(err)
