@@ -1,11 +1,59 @@
 <html>
 <head>
-<title>Hello world!</title>
+<title>Welcome to Cloud Foundry</title>
+<link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet" integrity="sha256-7s5uDGW3AHqw6xtJmNNtr+OBRJUlgkNJEo78P4b0yRw= sha512-nNo+yCHEyn0smMxSswnf/OnX6/KwJuZTlNZBjauKhTK0c+zT+q5JOCx0UFhXQ6rJR9jg6Es8gPuD2uZcYDLqSw==" crossorigin="anonymous">
+<style type="text/css">
+a, a:focus, a:hover { color: #fff; }
+.btn-default, .btn-default:hover, .btn-default:focus { color: #333; text-shadow: none; /* Prevent inheritence from `body` */ background-color: #fff; border: 1px solid #fff; }
+html, body { height: 100%; background-color: #333; }
+body { color: #fff; text-align: center; text-shadow: 0 1px 3px rgba(0,0,0,.5); }
+.site-wrapper { display: table; width: 100%; height: 100%; /* For at least Firefox */ min-height: 100%; -webkit-box-shadow: inset 0 0 100px rgba(0,0,0,.5); box-shadow: inset 0 0 100px rgba(0,0,0,.5); }
+.site-wrapper-inner { display: table-cell; vertical-align: top; }
+.cover-container { margin-right: auto; margin-left: auto; }
+.inner { padding: 30px; }
+.cover { padding: 0 20px; }
+.cover .btn-lg { padding: 10px 20px; font-weight: bold; }
+.mastfoot { color: #999; /* IE8 proofing */ color: rgba(255,255,255,.5); }
+@media (min-width: 768px) {
+  .masthead { position: fixed; top: 0; }
+  .mastfoot { position: fixed; bottom: 0; }
+  .site-wrapper-inner { vertical-align: middle; }
+  .mastfoot, .cover-container { width: 100%; }
+}
+@media (min-width: 992px) {
+  .mastfoot, .cover-container { width: 700px; }
+}
+</style>
 </head>
 <body>
-<h1>Hello, World!</h1>
-<h2>You're viewing index {{ .Index }} of this app, running at IP {{ .IP }} on port {{ .Port }}</h2>
-<a href="/kill">Kill this instance</a>
-<p>You are the {{ .PageCount }} visitor</p>
+  <div class="site-wrapper">
+    <div class="site-wrapper-inner">
+      <div class="cover-container">
+        <div class="inner cover">
+          <h1 class="cover-heading">Welcome to Cloud Foundry</h1>
+          <p class="lead">{{if show .}}You're visitor number {{ .PageCount }} to this site. {{end}}You're viewing index {{ .Index }} of this app, listening at internal IP address {{ .IP }} on port {{ .Port }}</p>
+          <p class="lead">
+            <a id="killswitch" href="#" class="btn btn-lg btn-default">Kill this Instance</a>
+          </p>
+        </div>
+
+        <div class="mastfoot">
+          <div class="inner">
+            <p>Cover template for <a href="http://getbootstrap.com">Bootstrap</a>, by <a href="https://twitter.com/mdo">@mdo</a>.</p>
+            <p style="font-size:x-small"><em>PS Hello, world!</em></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha256-KXn5puMvxCw+dAYznun+drMdG1IFl3agK0p/pqT9KAo= sha512-2e8qq0ETcfWRI4HJBzQiA3UoyFk6tbNyG+qSaIBZLyW9Xf3sWZHN/lxe9fTh1U45DpPf07yj94KsUHHWe4Yk1A==" crossorigin="anonymous"></script>
+  <script type="text/javascript">
+    $(function() {
+      $('#killswitch').click(function() {
+        $.get("/kill", $.noop).always(window.location.reload());
+      });
+    });
+  </script>
 </body>
 </html>

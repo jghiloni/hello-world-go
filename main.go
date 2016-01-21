@@ -19,9 +19,8 @@ type Page struct {
 
 const KEY string = "PageCount"
 
-var templates = template.Must(template.ParseFiles("templates/hello.html"))
-
-var client
+var client *redis.Client = (*redis.Client)(nil)
+var templates *template.Template = (*template.Template)(nil)
 
 func loadPage() *Page {
   return &Page {
@@ -46,6 +45,16 @@ func killHandler(w http.ResponseWriter, r *http.Request) {
   os.Exit(1)
 }
 
+func resetHandler(w http.ResponseWriter, r *http.Request) {
+  if client == nil {
+    return
+  }
+
+  client.Set(KEY, "0", 0)
+  http.Redirect(w, r, "/hello", http.StatusFound)
+  return
+}
+
 func helloHandler(w http.ResponseWriter, r *http.Request) {
   p := loadPage()
   p.PageCount = pageCount()
@@ -60,38 +69,38 @@ func helloHandler(w http.ResponseWriter, r *http.Request) {
 
 func pageCount() uint64 {
   if client == nil {
-    return 0;
+    return 0
   }
 
   count, err := client.Get(KEY).Uint64()
   if err == redis.Nil {
-    count := 1
+    count = 1
   } else {
     count++
   }
 
-  setError := client.set(KEY, fmt.Sprintf("%d", count), 0)
-  if setError != nil {
-    panic(setError)
+  statusCmd := client.Set(KEY, fmt.Sprintf("%d", count), 0)
+  if statusCmd.Err() != nil {
+    panic(statusCmd)
   }
 
   return count
 }
 
-func loadDB(appEnv App) {
+func loadDB(appEnv *cfenv.App) {
   services, _ := appEnv.Services.WithTag("redis")
   if len(services) > 0 {
     creds := services[0].Credentials
 
-    client := redis.NewClient(&redis.Options{
+    client = redis.NewClient(&redis.Options{
       Addr: fmt.Sprintf("%s:%s", creds["hostname"], creds["port"]),
-      Password: creds["password"],
-      DB: 0
+      Password: creds["password"].(string),
+      DB: 0,
     })
 
-    pong, err := client.Ping().Result()
+    _, err := client.Ping().Result()
     if err != nil {
-      client := nil
+      client = nil
     }
   }
 }
@@ -99,13 +108,27 @@ func loadDB(appEnv App) {
 func main() {
   appEnv, _ := cfenv.Current()
 
+  FuncMap := template.FuncMap{
+    "show": func(a *Page) bool {
+      return a != nil && a.PageCount > 0
+    },
+    "ne": func(a, b interface{}) bool {
+      return a != b
+    },
+  }
+
+  templates = template.Must(template.New("SampleTemplates").Funcs(FuncMap).ParseFiles("templates/hello.html"))
+
   loadDB(appEnv)
 
   http.HandleFunc("/", rootHandler)
   http.HandleFunc("/kill", killHandler)
+  http.HandleFunc("/reset", resetHandler)
   http.HandleFunc("/hello", helloHandler)
 
-  err := http.ListenAndServe(":" + appEnv.Port, nil)
+  http.Handle("/static", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
+
+  err := http.ListenAndServe(":" + os.Getenv("PORT"), nil)
   if err != nil {
     log.Fatal(err)
   }
