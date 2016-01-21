@@ -1,6 +1,8 @@
 package main
 
 import (
+  "github.com/cloudfoundry-community/go-cfenv"
+  "gopkg.in/redis.v3"
   "log"
   "fmt"
   "net/http"
@@ -12,9 +14,14 @@ type Page struct {
   IP string
   Port string
   Index string
+  PageCount uint64
 }
 
+const KEY string = "PageCount"
+
 var templates = template.Must(template.ParseFiles("templates/hello.html"))
+
+var client
 
 func loadPage() *Page {
   return &Page {
@@ -41,6 +48,7 @@ func killHandler(w http.ResponseWriter, r *http.Request) {
 
 func helloHandler(w http.ResponseWriter, r *http.Request) {
   p := loadPage()
+  p.PageCount = pageCount()
 
   fmt.Printf("A request just came in for instance %s. How exciting!\n", p.Index)
 
@@ -50,16 +58,54 @@ func helloHandler(w http.ResponseWriter, r *http.Request) {
   }
 }
 
-func main() {
-  p := loadPage()
+func pageCount() uint64 {
+  if client == nil {
+    return 0;
+  }
 
-  fmt.Printf("%+v\n", p)
+  count, err := client.Get(KEY).Uint64()
+  if err == redis.Nil {
+    count := 1
+  } else {
+    count++
+  }
+
+  setError := client.set(KEY, fmt.Sprintf("%d", count), 0)
+  if setError != nil {
+    panic(setError)
+  }
+
+  return count
+}
+
+func loadDB(appEnv App) {
+  services, _ := appEnv.Services.WithTag("redis")
+  if len(services) > 0 {
+    creds := services[0].Credentials
+
+    client := redis.NewClient(&redis.Options{
+      Addr: fmt.Sprintf("%s:%s", creds["hostname"], creds["port"]),
+      Password: creds["password"],
+      DB: 0
+    })
+
+    pong, err := client.Ping().Result()
+    if err != nil {
+      client := nil
+    }
+  }
+}
+
+func main() {
+  appEnv, _ := cfenv.Current()
+
+  loadDB(appEnv)
 
   http.HandleFunc("/", rootHandler)
   http.HandleFunc("/kill", killHandler)
   http.HandleFunc("/hello", helloHandler)
 
-  err := http.ListenAndServe(":" + os.Getenv("PORT"), nil)
+  err := http.ListenAndServe(":" + appEnv.Port, nil)
   if err != nil {
     log.Fatal(err)
   }
