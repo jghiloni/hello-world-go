@@ -5,4 +5,4 @@ applications:
   name: helloworld-jdg-cfdemo
   host: helloworld-jdg-cfdemo
   disk_quota: 1024M
-  buildpack: https://github.com/cloudfoundry/go-buildpack.git
+  buildpack: go_buildpack

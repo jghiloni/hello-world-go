@@ -92,14 +92,16 @@ func loadDB(appEnv *cfenv.App) {
   if len(services) > 0 {
     creds := services[0].Credentials
 
+    addr := fmt.Sprintf("%v:%v", creds["host"], creds["port"])
     client = redis.NewClient(&redis.Options{
-      Addr: fmt.Sprintf("%s:%s", creds["hostname"], creds["port"]),
+      Addr: addr,
       Password: creds["password"].(string),
       DB: 0,
     })
 
     _, err := client.Ping().Result()
     if err != nil {
+      fmt.Printf("err: %v\n", err)
       client = nil
     }
   }
